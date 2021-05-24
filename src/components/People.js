@@ -1,15 +1,20 @@
-import React from 'react';
-import { useQuery } from 'react-query';
+import React, {useState} from 'react';
+import { useQuery, usePaginatedQuery } from 'react-query';
 import Person from './Person';
 
-const fetchPeople = async () => {
+const fetchPeople = async (key, page) => {
   const res = await fetch('http://swapi.dev/api/people/');
   return res.json();
 }
 
 const People = () => {
-  const { data, status } = useQuery('people', fetchPeople);
-  console.log(data);
+  // const { data, status } = useQuery('people', fetchPeople);
+  const [page, setPage] = useState(1);
+  const {
+    resolvedData,
+    latestData,
+    status
+  } = usePaginatedQuery(['people', page], fetchPeople);
 
   return (
     <div>
@@ -24,9 +29,23 @@ const People = () => {
       )}
 
       {status === 'success' && (
+        <>
+        <button
+        onClick={() => setPage(old => Math.max(old-1, 1))}
+        disabled={page===1}
+        >Previous Page</button>
+        
+        <span>{page}</span>
+
+        <button
+        onClick={() => setPage(old => (!latestData || !latestData.next ? old : old+1))}
+        disabled={!latestData || !latestData.next}
+        >Next Page</button>
+        
         <div>
-          { data.results.map(person => <Person key={person.name} person={person} /> ) }
+          { resolvedData.results.map(person => <Person key={person.name} person={person} /> ) }
         </div>
+        </>
       )} 
     </div>
   );
